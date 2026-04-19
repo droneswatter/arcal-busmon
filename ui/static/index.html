@@ -30,6 +30,13 @@ body {
 }
 #pause-btn:hover { background: #30363d; }
 #pause-btn.paused { border-color: #f0883e; color: #f0883e; }
+.keys {
+  color: #8b949e; font-size: 11px; white-space: nowrap;
+}
+.keys kbd {
+  padding: 1px 5px; background: #0d1117; border: 1px solid #30363d;
+  border-radius: 4px; color: #e6edf3; font-family: inherit; font-size: 11px;
+}
 
 /* ── Body layout ─────────────────────────────────────────────────────────── */
 #body { display: flex; flex: 1; overflow: hidden; }
@@ -43,6 +50,15 @@ body {
   font-size: 10px; color: #8b949e; padding: 4px 12px 6px;
   text-transform: uppercase; letter-spacing: 0.08em;
 }
+.topic-actions {
+  display: flex; gap: 6px; padding: 0 10px 6px;
+}
+.topic-actions button {
+  flex: 1; padding: 3px 8px; background: #21262d;
+  border: 1px solid #30363d; color: #e6edf3; border-radius: 5px;
+  cursor: pointer; font-size: 11px; font-family: inherit;
+}
+.topic-actions button:hover { background: #30363d; }
 .topic-row {
   display: flex; align-items: center; gap: 6px;
   padding: 4px 10px; cursor: pointer;
@@ -85,9 +101,29 @@ body {
   display: flex; flex-direction: column; overflow: hidden;
 }
 #detail-hdr {
-  padding: 6px 12px; background: #161b22; border-bottom: 1px solid #30363d;
+  display: flex; align-items: center; gap: 12px; padding: 6px 12px;
+  background: #161b22; border-bottom: 1px solid #30363d;
   color: #8b949e; font-size: 11px; flex-shrink: 0; min-height: 30px;
 }
+#detail-title {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.detail-toggles {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.detail-toggles label {
+  display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap;
+}
+.detail-toggles input {
+  accent-color: #58a6ff; cursor: pointer;
+}
+.detail-action {
+  padding: 2px 9px; background: #21262d;
+  border: 1px solid #30363d; color: #e6edf3; border-radius: 5px;
+  cursor: pointer; font-size: 11px; font-family: inherit; flex-shrink: 0;
+}
+.detail-action:hover { background: #30363d; }
+.detail-action[hidden] { display: none; }
 #detail-body { flex: 1; overflow: auto; padding: 12px; }
 #detail-body pre { font-size: 12px; line-height: 1.55; white-space: pre; }
 
@@ -109,12 +145,17 @@ body {
   <div class="stat">total <b id="s-total">0</b></div>
   <div class="stat">rate <b id="s-rate">0</b>/s</div>
   <div class="stat">shown <b id="s-shown">0</b></div>
+  <div class="keys"><kbd>↑</kbd><kbd>↓</kbd> message&nbsp;&nbsp;<kbd>←</kbd><kbd>→</kbd> topic</div>
   <button id="pause-btn" onclick="togglePause()">Pause</button>
 </div>
 
 <div id="body">
   <div id="sidebar">
     <h3>Topics</h3>
+    <div class="topic-actions">
+      <button onclick="setAllTopics(true)">All</button>
+      <button onclick="setAllTopics(false)">None</button>
+    </div>
     <div id="topic-list"></div>
   </div>
 
@@ -128,7 +169,14 @@ body {
   </div>
 
   <div id="detail">
-    <div id="detail-hdr">Select a message to inspect</div>
+    <div id="detail-hdr">
+      <span id="detail-title">Select a message to inspect</span>
+      <button id="save-detail" class="detail-action" onclick="saveSelectedMessage()" hidden>Save</button>
+      <div class="detail-toggles">
+        <label><input id="show-security" type="checkbox" onchange="rerenderDetail()"> SecurityInfo</label>
+        <label><input id="show-header" type="checkbox" onchange="rerenderDetail()"> MessageHeader</label>
+      </div>
+    </div>
     <div id="detail-body"><pre style="color:#484f58">—</pre></div>
   </div>
 </div>
@@ -146,6 +194,8 @@ let topics   = {};    // name → {count, enabled}
 let selMeta  = null;  // selected metadata object (reference)
 let paused   = false;
 let serverTotal = 0;
+let newTopicsEnabled = true;
+let detailData = null;
 
 // Rate: count arrivals in the last 1 s buckets
 let rateBuckets = [];  // [{ts, n}]
@@ -172,12 +222,11 @@ function onBatch({ batch, total }) {
 
   if (paused) return;
 
-  let topicsChanged = false;
   for (const m of batch) {
-    if (!topics[m.topic]) { topics[m.topic] = { count: 0, enabled: true }; topicsChanged = true; }
+    if (!topics[m.topic]) { topics[m.topic] = { count: 0, enabled: newTopicsEnabled }; }
     topics[m.topic].count++;
   }
-  if (topicsChanged) renderTopics();
+  renderTopics();
 
   msgs.push(...batch);
   if (msgs.length > MAX_MSGS) msgs.splice(0, msgs.length - MAX_MSGS);
@@ -188,7 +237,7 @@ function onBatch({ batch, total }) {
   const el = document.getElementById('list-scroll');
   const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
   renderList();
-  if (atBottom) el.scrollTop = el.scrollHeight;
+  if (!selMeta && atBottom) el.scrollTop = el.scrollHeight;
 }
 
 function rebuildFiltered() {
@@ -227,6 +276,15 @@ function toggleTopic(name, enabled) {
   updateStats();
 }
 
+function setAllTopics(enabled) {
+  newTopicsEnabled = enabled;
+  for (const info of Object.values(topics)) info.enabled = enabled;
+  renderTopics();
+  rebuildFiltered();
+  renderList();
+  updateStats();
+}
+
 // ── Virtual scroll ─────────────────────────────────────────────────────────────
 function onScroll() { renderList(); }
 
@@ -256,7 +314,7 @@ function renderList() {
       `<span class="bytes">${m.bytes}</span>` +
       `<span class="seq">${m.seq}</span>`;
     const captured = m;
-    row.onclick = () => selectMsg(captured);
+    row.onpointerdown = () => selectMsg(captured);
     frag.appendChild(row);
   }
   inner.innerHTML = '';
@@ -268,21 +326,123 @@ async function selectMsg(meta) {
   selMeta = meta;
   renderList();  // re-render to show selection highlight
 
-  const hdr = document.getElementById('detail-hdr');
+  const hdr = document.getElementById('detail-title');
   const body = document.getElementById('detail-body');
+  const saveBtn = document.getElementById('save-detail');
   hdr.textContent = `${meta.type}  ·  ${meta.topic}  ·  seq ${meta.seq}  ·  ${meta.bytes} B  ·  ${meta.tag}`;
   body.innerHTML = '<pre class="loading">loading…</pre>';
+  detailData = null;
+  saveBtn.hidden = true;
 
   try {
     const resp = await fetch(`/message/${encodeURIComponent(meta.topic)}/${meta.seq}`);
     const data = await resp.json();
     if (resp.ok) {
-      body.innerHTML = `<pre>${highlight(JSON.stringify(data, null, 2))}</pre>`;
+      detailData = data;
+      saveBtn.hidden = false;
+      rerenderDetail();
     } else {
       body.innerHTML = `<pre style="color:#f85149">${esc(data.error || 'error')}</pre>`;
     }
   } catch (e) {
     body.innerHTML = `<pre style="color:#f85149">${esc(String(e))}</pre>`;
+  }
+}
+
+function filteredDetailData(data) {
+  const showSecurity = document.getElementById('show-security').checked;
+  const showHeader = document.getElementById('show-header').checked;
+  const view = Array.isArray(data) ? [...data] : { ...data };
+
+  if (!showSecurity) {
+    delete view.SecurityInformation;
+    delete view.SecurityInfo;
+  }
+  if (!showHeader) {
+    delete view.MessageHeader;
+  }
+
+  return view;
+}
+
+function rerenderDetail() {
+  if (!detailData) return;
+  const body = document.getElementById('detail-body');
+  body.innerHTML = `<pre>${highlight(JSON.stringify(filteredDetailData(detailData), null, 2))}</pre>`;
+}
+
+function saveSelectedMessage() {
+  if (!detailData || !selMeta) return;
+  const json = JSON.stringify(filteredDetailData(detailData), null, 2) + '\n';
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const topic = selMeta.topic.replace(/[^A-Za-z0-9_.-]+/g, '_');
+  link.href = url;
+  link.download = `${topic}-${selMeta.seq}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function selectedIndex() {
+  if (!selMeta) return -1;
+  return filtered.findIndex(m => m === selMeta || (m.topic === selMeta.topic && m.seq === selMeta.seq));
+}
+
+function selectByOffset(delta) {
+  if (!filtered.length) return;
+  const current = selectedIndex();
+  const base = current >= 0 ? current : filtered.length - 1;
+  const next = Math.max(0, Math.min(filtered.length - 1, base + delta));
+  revealAndSelect(next);
+}
+
+function selectByTopic(delta) {
+  if (!filtered.length) return;
+  const current = selectedIndex();
+  const base = current >= 0 ? current : filtered.length - 1;
+  const topic = filtered[base]?.topic;
+
+  for (let i = base + delta; i >= 0 && i < filtered.length; i += delta) {
+    if (filtered[i].topic !== topic) {
+      revealAndSelect(i);
+      return;
+    }
+  }
+}
+
+function revealAndSelect(index) {
+  const scroll = document.getElementById('list-scroll');
+  const top = index * ROW_H;
+  const bottom = top + ROW_H;
+
+  if (top < scroll.scrollTop) {
+    scroll.scrollTop = top;
+  } else if (bottom > scroll.scrollTop + scroll.clientHeight) {
+    scroll.scrollTop = bottom - scroll.clientHeight;
+  }
+
+  selectMsg(filtered[index]);
+}
+
+function handleKeyNav(e) {
+  const tag = e.target?.tagName;
+  if (tag === 'INPUT' || tag === 'BUTTON' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    selectByOffset(-1);
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    selectByOffset(1);
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    selectByTopic(-1);
+  } else if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    selectByTopic(1);
   }
 }
 
@@ -319,6 +479,7 @@ function togglePause() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 setInterval(updateStats, 1000);
+document.addEventListener('keydown', handleKeyNav);
 connect();
 </script>
 </body>

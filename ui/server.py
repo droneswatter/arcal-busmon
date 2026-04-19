@@ -109,6 +109,7 @@ async def get_message(topic: str, seq: int):
 async def broadcaster():
     """Drain the queue every BATCH_MS and push to all WebSocket clients."""
     global _total
+    global _clients
     while True:
         await asyncio.sleep(BATCH_MS / 1000)
 

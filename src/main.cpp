@@ -25,7 +25,7 @@ static void sighandler(int) {
 static void usage(const char* prog) {
     std::cerr << "usage: " << prog
               << " [--log-dir DIR] [--domain ID] [--duration SECONDS]"
-              << " [--stream FIFO_PATH]\n";
+              << " [--stream FIFO_PATH] [--debug-stream]\n";
 }
 
 int main(int argc, char** argv) {
@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
     int         domainId   = 0;
     int         duration   = 0;
     std::string streamPath;
+    bool        debugStream = false;
 
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--log-dir") == 0 && i + 1 < argc) {
@@ -43,10 +44,16 @@ int main(int argc, char** argv) {
             duration = std::atoi(argv[++i]);
         } else if (std::strcmp(argv[i], "--stream") == 0 && i + 1 < argc) {
             streamPath = argv[++i];
+        } else if (std::strcmp(argv[i], "--debug-stream") == 0) {
+            debugStream = true;
         } else {
             usage(argv[0]);
             return 1;
         }
+    }
+
+    if (const char* env = std::getenv("BUSMON_STREAM_DEBUG")) {
+        debugStream = std::strcmp(env, "0") != 0 && std::strcmp(env, "false") != 0;
     }
 
     dds_entity_t participant = dds_create_participant(
@@ -70,9 +77,11 @@ int main(int argc, char** argv) {
 
         std::unique_ptr<StreamPipe> pipe;
         if (!streamPath.empty()) {
-            pipe = std::make_unique<StreamPipe>(streamPath);
+            pipe = std::make_unique<StreamPipe>(streamPath, debugStream);
             decoder.setStream(pipe.get());
             std::cout << "[busmon] streaming metadata to " << streamPath << "\n";
+            if (debugStream)
+                std::cerr << "[busmon:stream] debug enabled\n";
         }
 
         TopicMonitor monitor(participant, decoder, logWriter);

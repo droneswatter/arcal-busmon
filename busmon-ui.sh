@@ -2,7 +2,7 @@
 # busmon-ui.sh — start arcal-busmon + web bridge, clean up on exit.
 #
 # Usage:
-#   ./busmon-ui.sh [--log-dir DIR] [--domain ID] [--duration SECS] [--port N]
+#   ./busmon-ui.sh [--log-dir DIR] [--domain ID] [--duration SECS] [--port N] [--debug-stream]
 #
 # Requires:
 #   - arcal-busmon already built  (build/arcal-busmon)
@@ -20,6 +20,7 @@ FIFO="/tmp/busmon.fifo"
 DOMAIN=0
 DURATION=0   # 0 = run until Ctrl-C
 PORT=8765
+DEBUG_STREAM=0
 
 # ── Argument parsing ──────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
@@ -28,7 +29,8 @@ while [[ $# -gt 0 ]]; do
     --domain)   DOMAIN="$2";   shift 2 ;;
     --duration) DURATION="$2"; shift 2 ;;
     --port)     PORT="$2";     shift 2 ;;
-    *) echo "usage: $0 [--log-dir DIR] [--domain ID] [--duration SECS] [--port N]" >&2; exit 1 ;;
+    --debug-stream) DEBUG_STREAM=1; shift ;;
+    *) echo "usage: $0 [--log-dir DIR] [--domain ID] [--duration SECS] [--port N] [--debug-stream]" >&2; exit 1 ;;
   esac
 done
 
@@ -68,6 +70,7 @@ sleep 0.5   # give uvicorn time to bind
 # ── Start arcal-busmon ────────────────────────────────────────────────────────
 BUSMON_ARGS=(--log-dir "$LOG_DIR" --domain "$DOMAIN" --stream "$FIFO")
 [[ "$DURATION" -gt 0 ]] && BUSMON_ARGS+=(--duration "$DURATION")
+[[ "$DEBUG_STREAM" -eq 1 ]] && BUSMON_ARGS+=(--debug-stream)
 
 echo "[busmon-ui] starting arcal-busmon (domain=$DOMAIN log-dir=$LOG_DIR)..."
 (CYCLONEDDS_URI="file://$CYCLONEDDS_XML" "$BUSMON_BIN" "${BUSMON_ARGS[@]}" 2>&1) &
