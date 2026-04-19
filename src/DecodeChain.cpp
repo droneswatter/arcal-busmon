@@ -13,18 +13,9 @@
 DecodeChain::DecodeChain(uci::base::Externalizer* jsonExt) : jsonExt_(jsonExt) {}
 
 void DecodeChain::decode(const std::string& topicName,
-                         const std::vector<uint8_t>& payload,
+                         uint32_t tag,
+                         const std::vector<uint8_t>& data,
                          LogWriter& writer) {
-    if (payload.size() < 4) {
-        std::cerr << "[busmon] payload too short on topic=" << topicName << "\n";
-        return;
-    }
-
-    const uint32_t tag = static_cast<uint32_t>(payload[0])
-                       | static_cast<uint32_t>(payload[1]) << 8
-                       | static_cast<uint32_t>(payload[2]) << 16
-                       | static_cast<uint32_t>(payload[3]) << 24;
-
     uci::base::Accessor* acc = arcal::arcalCreateAccessor(tag);
     if (!acc) {
         std::cerr << "[busmon] unknown type tag 0x" << std::hex << std::setw(8)
@@ -32,14 +23,14 @@ void DecodeChain::decode(const std::string& topicName,
         return;
     }
 
-    arcal::cdrDeserialize(payload, *acc);
+    arcal::cdrDeserialize(tag, data, *acc);
 
     std::string json;
     jsonExt_->write(*acc, json);
 
     std::cout << "[" << acc->typeName() << "]"
               << "  topic=" << topicName
-              << "  bytes=" << payload.size()
+              << "  bytes=" << data.size()
               << "  tag=0x" << std::hex << std::setw(8) << std::setfill('0') << tag
               << std::dec << "\n";
 

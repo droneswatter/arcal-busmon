@@ -128,10 +128,10 @@ void TopicMonitor::drainPayloadReader(dds_entity_t reader,
     for (int i = 0; i < n; ++i) {
         if (!info[i].valid_data) continue;
         auto* sample = static_cast<arcal_dds_OpaquePayload*>(ptrs[i]);
-        std::vector<uint8_t> bytes(
+        std::vector<uint8_t> data(
             sample->data._buffer,
             sample->data._buffer + sample->data._length);
-        decoder_.decode(topicName, bytes, writer_);
+        decoder_.decode(topicName, sample->type_tag, data, writer_);
         ++msgCounts_[topicName];
     }
     dds_return_loan(reader, ptrs, n);
