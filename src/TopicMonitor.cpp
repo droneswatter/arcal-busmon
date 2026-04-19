@@ -77,7 +77,7 @@ void TopicMonitor::pollBuiltin() {
     void* ptrs[kBatch] = {};
     dds_sample_info_t info[kBatch];
 
-    int n = dds_read(builtinReader_, ptrs, info, kBatch, kBatch);
+    int n = dds_take(builtinReader_, ptrs, info, kBatch, kBatch);
     for (int i = 0; i < n; ++i) {
         if (!info[i].valid_data) continue;
         auto* ep = static_cast<dds_builtintopic_endpoint_t*>(ptrs[i]);
