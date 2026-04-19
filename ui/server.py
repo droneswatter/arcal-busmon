@@ -15,7 +15,6 @@ Env vars (fallback):
 
 import argparse
 import asyncio
-import fcntl
 import json
 import os
 import threading
@@ -140,21 +139,21 @@ async def broadcaster():
 
 
 def _fifo_reader():
-    """Background thread: open FIFO, read NDJSON lines, enqueue metadata."""
+    """Background thread: open FIFO, read NDJSON lines, enqueue metadata.
+
+    Uses a plain blocking open() so the thread waits here until busmon opens
+    the write end — no polling, no EOF cycling.  When busmon exits (write end
+    closes) read() returns EOF and we loop back to wait for the next start.
+    """
     while True:
         try:
             if not Path(FIFO_PATH).exists():
                 time.sleep(0.5)
                 continue
 
-            # O_NONBLOCK so open() doesn't block waiting for the write end.
-            fd = os.open(FIFO_PATH, os.O_RDONLY | os.O_NONBLOCK)
-            # Switch to blocking mode so reads block until data arrives.
-            flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-            fcntl.fcntl(fd, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
-
-            print(f"[bridge] connected to {FIFO_PATH}")
-            with os.fdopen(fd, "r", buffering=1) as f:
+            # Blocking open — waits until busmon opens the write end.
+            with open(FIFO_PATH, "r", buffering=1) as f:
+                print(f"[bridge] connected to {FIFO_PATH}")
                 for line in f:
                     line = line.strip()
                     if not line:
@@ -170,8 +169,7 @@ def _fifo_reader():
 
         except OSError as exc:
             print(f"[bridge] FIFO error: {exc}, retrying in 1 s...")
-
-        time.sleep(0.5)
+            time.sleep(1)
 
 
 def _sanitize(name: str) -> str:
