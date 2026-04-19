@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+file(WRITE "${CMAKE_BINARY_DIR}/.gitignore" "*\n")
+
 # ---------------------------------------------------------------------------
 # Locate arcal from its source + build tree.
 # Pass -DARCAL_DIR=/path/to/arcal or set the ARCAL_DIR environment variable.
