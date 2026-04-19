@@ -47,6 +47,7 @@ add_executable(arcal-busmon
     src/LogWriter.cpp
     src/TopicMonitor.cpp
     src/DecodeChain.cpp
+    src/StreamPipe.cpp
 )
 
 target_include_directories(arcal-busmon PRIVATE

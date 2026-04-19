@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>arcal-busmon</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0d1117; color: #e6edf3;
+  font-family: 'SF Mono', Consolas, 'Liberation Mono', monospace;
+  font-size: 13px; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+#header {
+  display: flex; align-items: center; gap: 20px; padding: 7px 16px;
+  background: #161b22; border-bottom: 1px solid #30363d; flex-shrink: 0;
+}
+#header h1 { font-size: 14px; font-weight: 700; color: #58a6ff; letter-spacing: 0.03em; }
+.stat { color: #8b949e; font-size: 12px; white-space: nowrap; }
+.stat b { color: #e6edf3; font-weight: 600; }
+#dot { width: 8px; height: 8px; border-radius: 50%; background: #3d444d;
+       display: inline-block; margin-right: 5px; transition: background 0.3s; }
+#dot.live  { background: #3fb950; box-shadow: 0 0 4px #3fb950; }
+#dot.error { background: #f85149; }
+#pause-btn {
+  margin-left: auto; padding: 3px 12px; background: #21262d;
+  border: 1px solid #30363d; color: #e6edf3; border-radius: 5px;
+  cursor: pointer; font-size: 12px; font-family: inherit;
+}
+#pause-btn:hover { background: #30363d; }
+#pause-btn.paused { border-color: #f0883e; color: #f0883e; }
+
+/* ── Body layout ─────────────────────────────────────────────────────────── */
+#body { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+#sidebar {
+  width: 210px; flex-shrink: 0; background: #161b22;
+  border-right: 1px solid #30363d; overflow-y: auto; padding: 6px 0;
+}
+#sidebar h3 {
+  font-size: 10px; color: #8b949e; padding: 4px 12px 6px;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.topic-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px; cursor: pointer;
+}
+.topic-row:hover { background: #1c2128; }
+.topic-row input { cursor: pointer; accent-color: #58a6ff; flex-shrink: 0; }
+.topic-label {
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px;
+}
+.topic-cnt { color: #8b949e; font-size: 11px; }
+
+/* ── Message list ────────────────────────────────────────────────────────── */
+#list-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#col-header {
+  display: grid; grid-template-columns: 100px 130px 1fr 58px 72px;
+  gap: 8px; padding: 4px 12px; background: #161b22;
+  border-bottom: 1px solid #30363d; color: #8b949e;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0;
+}
+#list-scroll { flex: 1; overflow-y: auto; position: relative; }
+#list-inner  { position: relative; }
+
+.row {
+  position: absolute; width: 100%;
+  display: grid; grid-template-columns: 100px 130px 1fr 58px 72px;
+  gap: 8px; padding: 3px 12px; align-items: center; cursor: pointer;
+  border-bottom: 1px solid #161b22;
+}
+.row:hover    { background: #1c2128; }
+.row.selected { background: #1a3a5c !important; }
+.row .ts    { color: #8b949e; font-size: 11px; }
+.row .topic { color: #79c0ff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .type  { color: #a5d6ff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.row .bytes { color: #8b949e; text-align: right; font-size: 11px; }
+.row .seq   { color: #484f58; text-align: right; font-size: 11px; }
+
+/* ── Detail panel ────────────────────────────────────────────────────────── */
+#detail {
+  width: 42%; flex-shrink: 0; border-left: 1px solid #30363d;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#detail-hdr {
+  padding: 6px 12px; background: #161b22; border-bottom: 1px solid #30363d;
+  color: #8b949e; font-size: 11px; flex-shrink: 0; min-height: 30px;
+}
+#detail-body { flex: 1; overflow: auto; padding: 12px; }
+#detail-body pre { font-size: 12px; line-height: 1.55; white-space: pre; }
+
+/* JSON syntax colours */
+.jk { color: #79c0ff; }   /* key   */
+.jv { color: #a5d6ff; }   /* string value */
+.jn { color: #79c0ff; }   /* number */
+.jb { color: #ff7b72; }   /* bool / null */
+
+/* Loading spinner */
+.loading { color: #8b949e; font-style: italic; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>arcal-busmon</h1>
+  <div class="stat"><span id="dot"></span><span id="conn-txt">connecting…</span></div>
+  <div class="stat">total <b id="s-total">0</b></div>
+  <div class="stat">rate <b id="s-rate">0</b>/s</div>
+  <div class="stat">shown <b id="s-shown">0</b></div>
+  <button id="pause-btn" onclick="togglePause()">Pause</button>
+</div>
+
+<div id="body">
+  <div id="sidebar">
+    <h3>Topics</h3>
+    <div id="topic-list"></div>
+  </div>
+
+  <div id="list-wrap">
+    <div id="col-header">
+      <span>Time</span><span>Topic</span><span>Type</span><span>Bytes</span><span>Seq</span>
+    </div>
+    <div id="list-scroll" onscroll="onScroll()">
+      <div id="list-inner"></div>
+    </div>
+  </div>
+
+  <div id="detail">
+    <div id="detail-hdr">Select a message to inspect</div>
+    <div id="detail-body"><pre style="color:#484f58">—</pre></div>
+  </div>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const ROW_H    = 28;
+const MAX_MSGS = 50_000;
+const WS_URL   = `ws://${location.host}/ws`;
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let msgs     = [];    // all metadata objects (ring buffer)
+let filtered = [];    // after topic filter
+let topics   = {};    // name → {count, enabled}
+let selMeta  = null;  // selected metadata object (reference)
+let paused   = false;
+let serverTotal = 0;
+
+// Rate: count arrivals in the last 1 s buckets
+let rateBuckets = [];  // [{ts, n}]
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+let ws;
+function connect() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen  = () => setConn('live');
+  ws.onclose = () => { setConn('error'); setTimeout(connect, 2000); };
+  ws.onerror = () => setConn('error');
+  ws.onmessage = e => onBatch(JSON.parse(e.data));
+}
+function setConn(s) {
+  document.getElementById('dot').className      = s;
+  document.getElementById('conn-txt').textContent =
+    s === 'live' ? 'live' : s === 'error' ? 'disconnected' : 'connecting…';
+}
+
+// ── Ingestion ─────────────────────────────────────────────────────────────────
+function onBatch({ batch, total }) {
+  serverTotal = total || serverTotal;
+  rateBuckets.push({ ts: Date.now(), n: batch.length });
+
+  if (paused) return;
+
+  let topicsChanged = false;
+  for (const m of batch) {
+    if (!topics[m.topic]) { topics[m.topic] = { count: 0, enabled: true }; topicsChanged = true; }
+    topics[m.topic].count++;
+  }
+  if (topicsChanged) renderTopics();
+
+  msgs.push(...batch);
+  if (msgs.length > MAX_MSGS) msgs.splice(0, msgs.length - MAX_MSGS);
+
+  rebuildFiltered();
+  updateStats();
+
+  const el = document.getElementById('list-scroll');
+  const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
+  renderList();
+  if (atBottom) el.scrollTop = el.scrollHeight;
+}
+
+function rebuildFiltered() {
+  filtered = msgs.filter(m => topics[m.topic]?.enabled !== false);
+}
+
+function updateStats() {
+  const now = Date.now();
+  rateBuckets = rateBuckets.filter(b => b.ts > now - 1000);
+  const rate  = rateBuckets.reduce((a, b) => a + b.n, 0);
+  document.getElementById('s-total').textContent = serverTotal.toLocaleString();
+  document.getElementById('s-rate').textContent  = rate.toLocaleString();
+  document.getElementById('s-shown').textContent = filtered.length.toLocaleString();
+}
+
+// ── Topics sidebar ────────────────────────────────────────────────────────────
+function renderTopics() {
+  const list = document.getElementById('topic-list');
+  list.innerHTML = '';
+  for (const [name, info] of Object.entries(topics).sort(([a],[b]) => a < b ? -1 : 1)) {
+    const d = document.createElement('div');
+    d.className = 'topic-row';
+    d.innerHTML =
+      `<input type="checkbox" ${info.enabled ? 'checked' : ''} ` +
+      `onchange="toggleTopic('${CSS.escape(name)}',this.checked)">` +
+      `<span class="topic-label" title="${name}">${name}</span>` +
+      `<span class="topic-cnt">${info.count.toLocaleString()}</span>`;
+    list.appendChild(d);
+  }
+}
+
+function toggleTopic(name, enabled) {
+  if (topics[name]) topics[name].enabled = enabled;
+  rebuildFiltered();
+  renderList();
+  updateStats();
+}
+
+// ── Virtual scroll ─────────────────────────────────────────────────────────────
+function onScroll() { renderList(); }
+
+function renderList() {
+  const scroll = document.getElementById('list-scroll');
+  const inner  = document.getElementById('list-inner');
+
+  inner.style.height = (filtered.length * ROW_H) + 'px';
+
+  const top    = scroll.scrollTop;
+  const height = scroll.clientHeight;
+  const start  = Math.max(0, Math.floor(top / ROW_H) - 5);
+  const end    = Math.min(filtered.length - 1, Math.ceil((top + height) / ROW_H) + 5);
+
+  const frag = document.createDocumentFragment();
+  for (let i = start; i <= end; i++) {
+    const m   = filtered[i];
+    const row = document.createElement('div');
+    row.className = 'row' + (m === selMeta ? ' selected' : '');
+    row.style.top    = (i * ROW_H) + 'px';
+    row.style.height = ROW_H + 'px';
+    const ts = new Date(m.ts_ms).toISOString().slice(11, 23);
+    row.innerHTML =
+      `<span class="ts">${ts}</span>` +
+      `<span class="topic">${esc(m.topic)}</span>` +
+      `<span class="type">${esc(m.type)}</span>` +
+      `<span class="bytes">${m.bytes}</span>` +
+      `<span class="seq">${m.seq}</span>`;
+    const captured = m;
+    row.onclick = () => selectMsg(captured);
+    frag.appendChild(row);
+  }
+  inner.innerHTML = '';
+  inner.appendChild(frag);
+}
+
+// ── Detail panel ───────────────────────────────────────────────────────────────
+async function selectMsg(meta) {
+  selMeta = meta;
+  renderList();  // re-render to show selection highlight
+
+  const hdr = document.getElementById('detail-hdr');
+  const body = document.getElementById('detail-body');
+  hdr.textContent = `${meta.type}  ·  ${meta.topic}  ·  seq ${meta.seq}  ·  ${meta.bytes} B  ·  ${meta.tag}`;
+  body.innerHTML = '<pre class="loading">loading…</pre>';
+
+  try {
+    const resp = await fetch(`/message/${encodeURIComponent(meta.topic)}/${meta.seq}`);
+    const data = await resp.json();
+    if (resp.ok) {
+      body.innerHTML = `<pre>${highlight(JSON.stringify(data, null, 2))}</pre>`;
+    } else {
+      body.innerHTML = `<pre style="color:#f85149">${esc(data.error || 'error')}</pre>`;
+    }
+  } catch (e) {
+    body.innerHTML = `<pre style="color:#f85149">${esc(String(e))}</pre>`;
+  }
+}
+
+// ── JSON syntax highlight ──────────────────────────────────────────────────────
+function highlight(json) {
+  // Escape HTML first, then colour tokens.
+  const safe = json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return safe.replace(
+    /("(?:\\u[0-9a-fA-F]{4}|\\[^u]|[^\\"])*"(?:\s*:)?|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
+    tok => {
+      if (tok[0] === '"') {
+        return tok.endsWith(':')
+          ? `<span class="jk">${tok}</span>`
+          : `<span class="jv">${tok}</span>`;
+      }
+      if (tok === 'true' || tok === 'false' || tok === 'null')
+        return `<span class="jb">${tok}</span>`;
+      return `<span class="jn">${tok}</span>`;
+    }
+  );
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function togglePause() {
+  paused = !paused;
+  const btn = document.getElementById('pause-btn');
+  btn.textContent = paused ? 'Resume' : 'Pause';
+  btn.className   = paused ? 'paused' : '';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+setInterval(updateStats, 1000);
+connect();
+</script>
+</body>
+</html>

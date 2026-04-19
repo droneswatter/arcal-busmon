@@ -6,11 +6,15 @@
 
 namespace uci { namespace base { class Externalizer; } }
 class LogWriter;
+class StreamPipe;
 
 class DecodeChain {
 public:
     // jsonExt must outlive this object.
     explicit DecodeChain(uci::base::Externalizer* jsonExt);
+
+    // Optional live metadata stream; must outlive this object.
+    void setStream(StreamPipe* stream) { stream_ = stream; }
 
     // Create accessor for tag, CDR-deserialize data, JSON-serialize, write to log.
     // Drops payload with a stderr message if the tag is unknown.
@@ -21,4 +25,5 @@ public:
 
 private:
     uci::base::Externalizer* jsonExt_;
+    StreamPipe*              stream_{nullptr};
 };

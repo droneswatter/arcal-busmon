@@ -1,5 +1,6 @@
 #include "DecodeChain.h"
 #include "LogWriter.h"
+#include "StreamPipe.h"
 #include "TopicMonitor.h"
 
 #include "uci/base/ExternalizerLoader.h"
@@ -10,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -22,13 +24,15 @@ static void sighandler(int) {
 
 static void usage(const char* prog) {
     std::cerr << "usage: " << prog
-              << " [--log-dir DIR] [--domain ID] [--duration SECONDS]\n";
+              << " [--log-dir DIR] [--domain ID] [--duration SECONDS]"
+              << " [--stream FIFO_PATH]\n";
 }
 
 int main(int argc, char** argv) {
-    std::string logDir   = "busmon-out";
-    int         domainId = 0;
-    int         duration = 0;
+    std::string logDir     = "busmon-out";
+    int         domainId   = 0;
+    int         duration   = 0;
+    std::string streamPath;
 
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--log-dir") == 0 && i + 1 < argc) {
@@ -37,6 +41,8 @@ int main(int argc, char** argv) {
             domainId = std::atoi(argv[++i]);
         } else if (std::strcmp(argv[i], "--duration") == 0 && i + 1 < argc) {
             duration = std::atoi(argv[++i]);
+        } else if (std::strcmp(argv[i], "--stream") == 0 && i + 1 < argc) {
+            streamPath = argv[++i];
         } else {
             usage(argv[0]);
             return 1;
@@ -59,8 +65,16 @@ int main(int argc, char** argv) {
     }
 
     try {
-        LogWriter    logWriter(logDir);
-        DecodeChain  decoder(jsonExt);
+        LogWriter   logWriter(logDir);
+        DecodeChain decoder(jsonExt);
+
+        std::unique_ptr<StreamPipe> pipe;
+        if (!streamPath.empty()) {
+            pipe = std::make_unique<StreamPipe>(streamPath);
+            decoder.setStream(pipe.get());
+            std::cout << "[busmon] streaming metadata to " << streamPath << "\n";
+        }
+
         TopicMonitor monitor(participant, decoder, logWriter);
 
         g_monitor = &monitor;

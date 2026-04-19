@@ -11,7 +11,8 @@ public:
 
     // Writes json to <logDir>/<topicName>/<seq>.json.
     // Creates the per-topic directory on first write. Thread-safe.
-    void write(const std::string& topicName, const std::string& json);
+    // Returns the 1-based sequence number used for the file name.
+    uint64_t write(const std::string& topicName, const std::string& json);
 
 private:
     static std::string sanitize(const std::string& topicName);

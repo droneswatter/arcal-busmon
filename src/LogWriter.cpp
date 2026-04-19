@@ -10,7 +10,7 @@ LogWriter::LogWriter(std::string logDir) : logDir_(std::move(logDir)) {
     std::filesystem::create_directories(logDir_);
 }
 
-void LogWriter::write(const std::string& topicName, const std::string& json) {
+uint64_t LogWriter::write(const std::string& topicName, const std::string& json) {
     std::lock_guard<std::mutex> lk(mu_);
 
     const std::string safe = sanitize(topicName);
@@ -25,6 +25,7 @@ void LogWriter::write(const std::string& topicName, const std::string& json) {
     std::ofstream out(dir / filename.str(), std::ios::binary);
     if (!out) throw std::runtime_error("LogWriter: cannot open " + filename.str());
     out << json;
+    return seq;
 }
 
 std::string LogWriter::sanitize(const std::string& topicName) {
