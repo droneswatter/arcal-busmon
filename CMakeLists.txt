@@ -65,3 +65,13 @@ target_link_libraries(arcal-busmon PRIVATE
 )
 
 install(TARGETS arcal-busmon RUNTIME DESTINATION bin)
+
+# ---------------------------------------------------------------------------
+# Bus-monitor demo publishers (moved from arcal/test/e2e/)
+# ---------------------------------------------------------------------------
+
+add_executable(pub_rich src/pub_rich.cpp)
+target_link_libraries(pub_rich PRIVATE arcal arcal_externalizer_cdr)
+
+add_executable(pub_continuous src/pub_continuous.cpp)
+target_link_libraries(pub_continuous PRIVATE arcal arcal_externalizer_cdr)
