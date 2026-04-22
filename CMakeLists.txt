@@ -64,14 +64,17 @@ target_link_libraries(arcal-busmon PRIVATE
     CycloneDDS::ddsc
 )
 
+# Embed library paths in the binary so dlopen("libarcal_externalizer_*.so")
+# resolves without LD_LIBRARY_PATH when running from the build tree.
+set_target_properties(arcal-busmon PROPERTIES
+    BUILD_RPATH
+        "${ARCAL_BUILD_DIR};${ARCAL_BUILD_DIR}/externalizer/cdr;${ARCAL_BUILD_DIR}/externalizer/json"
+)
+
 install(TARGETS arcal-busmon RUNTIME DESTINATION bin)
 
 # ---------------------------------------------------------------------------
-# Bus-monitor demo publishers (moved from arcal/test/e2e/)
+# Traffic generators — publish UCI messages to exercise the busmon UI.
 # ---------------------------------------------------------------------------
 
-add_executable(pub_rich src/pub_rich.cpp)
-target_link_libraries(pub_rich PRIVATE arcal arcal_externalizer_cdr)
-
-add_executable(pub_continuous src/pub_continuous.cpp)
-target_link_libraries(pub_continuous PRIVATE arcal arcal_externalizer_cdr)
+add_subdirectory(pub)

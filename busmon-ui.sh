@@ -14,6 +14,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUSMON_BIN="$SCRIPT_DIR/build/arcal-busmon"
 UI_DIR="$SCRIPT_DIR/ui"
 CYCLONEDDS_XML="$SCRIPT_DIR/../arcal/test/e2e/cyclonedds_localhost.xml"
+ARCAL_BUILD_DIR="$SCRIPT_DIR/../arcal/build"
+
+# arcal externalizer plugins are loaded via dlopen with bare sonames; they must
+# be on LD_LIBRARY_PATH so the dynamic linker can locate them at runtime.
+export LD_LIBRARY_PATH="$ARCAL_BUILD_DIR:$ARCAL_BUILD_DIR/externalizer/cdr:$ARCAL_BUILD_DIR/externalizer/json${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 LOG_DIR="/tmp/busmon-out"
 FIFO="/tmp/busmon.fifo"
