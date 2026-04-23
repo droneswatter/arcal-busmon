@@ -65,7 +65,7 @@ mkdir -p "$LOG_DIR"
 
 if [[ "$START_ARLACAL" -eq 1 ]]; then
   echo "[busmon-ui] starting arlacal-server on $LACAL_URL..."
-  (cd "$ARCAL_DIR" && \
+  (trap '' INT; cd "$ARCAL_DIR" && \
     CYCLONEDDS_URI="file://$CYCLONEDDS_XML" \
     "$ARLACAL_BIN" --host "$LACAL_HOST" --port "$LACAL_PORT" --domain "$DOMAIN" 2>&1) &
   PIDS+=($!)
@@ -73,7 +73,7 @@ if [[ "$START_ARLACAL" -eq 1 ]]; then
 fi
 
 echo "[busmon-ui] starting web UI on port $PORT..."
-(cd "$SCRIPT_DIR" && uv run python -m busmon.app \
+(trap '' INT; cd "$SCRIPT_DIR" && uv run python -m busmon.app \
   --lacal-url "$LACAL_URL" \
   --log-dir "$LOG_DIR" \
   --port "$PORT" \

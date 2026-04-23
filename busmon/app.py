@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Any
 
@@ -68,7 +68,11 @@ async def lifespan(app: FastAPI):
         await client.stop()
         if owp_task:
             owp_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await owp_task
         broadcaster_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await broadcaster_task
 
 
 app = FastAPI(lifespan=lifespan)
@@ -89,7 +93,7 @@ async def ws_endpoint(websocket: WebSocket):
     try:
         while True:
             await asyncio.sleep(3600)
-    except (WebSocketDisconnect, Exception):
+    except (WebSocketDisconnect, asyncio.CancelledError):
         pass
     finally:
         clients.discard(websocket)

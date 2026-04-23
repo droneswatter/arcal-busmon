@@ -259,12 +259,20 @@ function renderTopics() {
   list.innerHTML = '';
   for (const [name, info] of Object.entries(topics).sort(([a],[b]) => a < b ? -1 : 1)) {
     const d = document.createElement('div');
+    const input = document.createElement('input');
+    const label = document.createElement('span');
+    const count = document.createElement('span');
+
     d.className = 'topic-row';
-    d.innerHTML =
-      `<input type="checkbox" ${info.enabled ? 'checked' : ''} ` +
-      `onchange="toggleTopic('${CSS.escape(name)}',this.checked)">` +
-      `<span class="topic-label" title="${name}">${name}</span>` +
-      `<span class="topic-cnt">${info.count.toLocaleString()}</span>`;
+    input.type = 'checkbox';
+    input.checked = info.enabled;
+    input.addEventListener('change', () => toggleTopic(name, input.checked));
+    label.className = 'topic-label';
+    label.title = name;
+    label.textContent = name;
+    count.className = 'topic-cnt';
+    count.textContent = info.count.toLocaleString();
+    d.append(input, label, count);
     list.appendChild(d);
   }
 }
