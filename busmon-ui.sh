@@ -54,26 +54,39 @@ cleanup() {
   echo ""
   echo "[busmon-ui] shutting down..."
   for pid in "${PIDS[@]}"; do
-    kill "$pid" 2>/dev/null || true
+    kill -TERM -- "-$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
+  done
+  for _ in {1..20}; do
+    local alive=0
+    for pid in "${PIDS[@]}"; do
+      kill -0 "$pid" 2>/dev/null && alive=1
+    done
+    [[ "$alive" -eq 0 ]] && break
+    sleep 0.1
+  done
+  for pid in "${PIDS[@]}"; do
+    kill -KILL -- "-$pid" 2>/dev/null || kill -KILL "$pid" 2>/dev/null || true
   done
   wait 2>/dev/null || true
   echo "[busmon-ui] done."
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
 
 mkdir -p "$LOG_DIR"
 
 if [[ "$START_ARLACAL" -eq 1 ]]; then
   echo "[busmon-ui] starting arlacal-server on $LACAL_URL..."
-  (trap '' INT; cd "$ARCAL_DIR" && \
+  (cd "$ARCAL_DIR" && \
     CYCLONEDDS_URI="file://$CYCLONEDDS_XML" \
-    "$ARLACAL_BIN" --host "$LACAL_HOST" --port "$LACAL_PORT" --domain "$DOMAIN" 2>&1) &
+    exec setsid "$ARLACAL_BIN" --host "$LACAL_HOST" --port "$LACAL_PORT" --domain "$DOMAIN" 2>&1) &
   PIDS+=($!)
   sleep 0.5
 fi
 
 echo "[busmon-ui] starting web UI on port $PORT..."
-(trap '' INT; cd "$SCRIPT_DIR" && uv run python -m busmon.app \
+(cd "$SCRIPT_DIR" && exec setsid uv run python -m busmon.app \
   --lacal-url "$LACAL_URL" \
   --log-dir "$LOG_DIR" \
   --port "$PORT" \

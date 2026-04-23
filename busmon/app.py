@@ -92,7 +92,9 @@ async def ws_endpoint(websocket: WebSocket):
         await websocket.send_text(json.dumps({"batch": history, "total": await store.total()}))
     try:
         while True:
-            await asyncio.sleep(3600)
+            event = await websocket.receive()
+            if event.get("type") == "websocket.disconnect":
+                break
     except (WebSocketDisconnect, asyncio.CancelledError):
         pass
     finally:
@@ -134,7 +136,7 @@ async def broadcaster() -> None:
 
 
 def main() -> None:
-    uvicorn.run(app, host="0.0.0.0", port=args.port)
+    uvicorn.run(app, host="0.0.0.0", port=args.port, timeout_graceful_shutdown=1)
 
 
 if __name__ == "__main__":
