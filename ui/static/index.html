@@ -329,13 +329,14 @@ async function selectMsg(meta) {
   const hdr = document.getElementById('detail-title');
   const body = document.getElementById('detail-body');
   const saveBtn = document.getElementById('save-detail');
-  hdr.textContent = `${meta.type}  ·  ${meta.topic}  ·  seq ${meta.seq}  ·  ${meta.bytes} B  ·  ${meta.tag}`;
+  const tag = meta.tag ? `  ·  ${meta.tag}` : '';
+  hdr.textContent = `${meta.type}  ·  ${meta.topic}  ·  seq ${meta.seq}  ·  ${meta.bytes} B${tag}`;
   body.innerHTML = '<pre class="loading">loading…</pre>';
   detailData = null;
   saveBtn.hidden = true;
 
   try {
-    const resp = await fetch(`/message/${encodeURIComponent(meta.topic)}/${meta.seq}`);
+    const resp = await fetch(`/message/${meta.seq}`);
     const data = await resp.json();
     if (resp.ok) {
       detailData = data;
