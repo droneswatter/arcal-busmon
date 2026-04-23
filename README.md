@@ -35,6 +35,16 @@ using ARCAL's bundled loopback Cyclone DDS config:
 This keeps the monitor on the same single-host DDS discovery settings used by
 ARCAL's tests and demo publishers.
 
+By default, the launcher assumes `arcal-busmon` and `arcal` are sibling
+checkouts. If ARCAL lives somewhere else, set `ARCAL_DIR`:
+
+```bash
+ARCAL_DIR=/path/to/arcal ./busmon-ui.sh
+```
+
+`ARCAL_BUILD_DIR` and `CYCLONEDDS_XML` can also be set when the build directory
+or Cyclone DDS config are not under the default ARCAL tree.
+
 If an LA-CAL server is already running, point busmon at it instead:
 
 ```bash

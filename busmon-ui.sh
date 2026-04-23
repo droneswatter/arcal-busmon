@@ -4,10 +4,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ARCAL_DIR="$SCRIPT_DIR/../arcal"
-ARCAL_BUILD_DIR="$ARCAL_DIR/build"
+ARCAL_DIR="${ARCAL_DIR:-$SCRIPT_DIR/../arcal}"
+ARCAL_BUILD_DIR="${ARCAL_BUILD_DIR:-$ARCAL_DIR/build}"
 ARLACAL_BIN="$ARCAL_BUILD_DIR/lacal/arlacal-server"
-CYCLONEDDS_XML="$ARCAL_DIR/test/e2e/cyclonedds_localhost.xml"
+CYCLONEDDS_XML="${CYCLONEDDS_XML:-$ARCAL_DIR/test/e2e/cyclonedds_localhost.xml}"
 
 LOG_DIR="/tmp/busmon-out"
 DOMAIN=0
