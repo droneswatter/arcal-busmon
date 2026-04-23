@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# busmon-ui.sh — start arlacal-server + the LA-CAL bus monitor UI.
+# busmon-ui.sh - start arlacal-server and print the static busmon UI URL.
 
 set -euo pipefail
 
@@ -9,22 +9,20 @@ ARCAL_BUILD_DIR="${ARCAL_BUILD_DIR:-$ARCAL_DIR/build}"
 ARLACAL_BIN="$ARCAL_BUILD_DIR/lacal/arlacal-server"
 CYCLONEDDS_XML="${CYCLONEDDS_XML:-$ARCAL_DIR/test/e2e/cyclonedds_localhost.xml}"
 
-LOG_DIR="/tmp/busmon-out"
 DOMAIN=0
-PORT=8765
 LACAL_HOST="127.0.0.1"
 LACAL_PORT=8766
 START_ARLACAL=1
 
 usage() {
-  echo "usage: $0 [--log-dir DIR] [--domain ID] [--port N] [--lacal-url URL] [--no-start-arlacal]" >&2
+  echo "usage: $0 [--domain ID] [--host ADDR] [--lacal-port N] [--lacal-url URL] [--no-start-arlacal]" >&2
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --log-dir) LOG_DIR="$2"; shift 2 ;;
     --domain) DOMAIN="$2"; shift 2 ;;
-    --port) PORT="$2"; shift 2 ;;
+    --host) LACAL_HOST="$2"; shift 2 ;;
+    --lacal-port) LACAL_PORT="$2"; shift 2 ;;
     --lacal-url)
       LACAL_URL="$2"
       START_ARLACAL=0
@@ -36,13 +34,21 @@ while [[ $# -gt 0 ]]; do
 done
 
 LACAL_URL="${LACAL_URL:-ws://$LACAL_HOST:$LACAL_PORT}"
+BUSMON_UI_URL="file://$SCRIPT_DIR/ui/static/index.html?ws=$LACAL_URL"
+WINDOWS_UI_URL=""
+
+if [[ -n "${WSL_DISTRO_NAME:-}" ]] && command -v wslpath >/dev/null 2>&1; then
+  WINDOWS_UI_PATH="$(wslpath -w "$SCRIPT_DIR/ui/static/index.html")"
+  WINDOWS_UI_PATH="${WINDOWS_UI_PATH/#\\\\wsl.localhost\\/\\\\wsl$\\}"
+  WINDOWS_UI_PATH="${WINDOWS_UI_PATH//\\//}"
+  WINDOWS_UI_URL="file:$WINDOWS_UI_PATH?ws=$LACAL_URL"
+fi
 
 if [[ "$START_ARLACAL" -eq 1 && ! -x "$ARLACAL_BIN" ]]; then
-  echo "error: $ARLACAL_BIN not found — run: cmake --build $ARCAL_BUILD_DIR --target arlacal-server" >&2
+  echo "error: $ARLACAL_BIN not found - run: cmake --build $ARCAL_BUILD_DIR --target arlacal-server" >&2
   exit 1
 fi
 
-WSL_IP="$(hostname -I | awk '{print $1}')"
 PIDS=()
 CLEANED_UP=0
 
@@ -51,6 +57,9 @@ cleanup() {
     return
   fi
   CLEANED_UP=1
+  if [[ "${#PIDS[@]}" -eq 0 ]]; then
+    return
+  fi
   echo ""
   echo "[busmon-ui] shutting down..."
   for pid in "${PIDS[@]}"; do
@@ -70,38 +79,44 @@ cleanup() {
   wait 2>/dev/null || true
   echo "[busmon-ui] done."
 }
+
 trap cleanup EXIT
 trap 'cleanup; exit 130' INT
 trap 'cleanup; exit 143' TERM
 
-mkdir -p "$LOG_DIR"
-
 if [[ "$START_ARLACAL" -eq 1 ]]; then
   echo "[busmon-ui] starting arlacal-server on $LACAL_URL..."
-  (cd "$ARCAL_DIR" && \
+  (
+    cd "$ARCAL_DIR"
     CYCLONEDDS_URI="file://$CYCLONEDDS_XML" \
-    exec setsid "$ARLACAL_BIN" --host "$LACAL_HOST" --port "$LACAL_PORT" --domain "$DOMAIN" 2>&1) &
+      exec setsid "$ARLACAL_BIN" --host "$LACAL_HOST" --port "$LACAL_PORT" --domain "$DOMAIN" 2>&1
+  ) &
   PIDS+=($!)
   sleep 0.5
 fi
 
-echo "[busmon-ui] starting web UI on port $PORT..."
-(cd "$SCRIPT_DIR" && exec setsid uv run python -m busmon.app \
-  --lacal-url "$LACAL_URL" \
-  --log-dir "$LOG_DIR" \
-  --port "$PORT" \
-  2>&1) &
-PIDS+=($!)
-
 echo ""
-echo "  ┌─────────────────────────────────────────────────┐"
-echo "  │  arcal-busmon LA-CAL UI                         │"
-echo "  │                                                 │"
-echo "  │  Windows browser → http://$WSL_IP:$PORT         │"
-echo "  │  LA-CAL source   → $LACAL_URL"
-echo "  │                                                 │"
-echo "  │  Press Ctrl-C to stop                           │"
-echo "  └─────────────────────────────────────────────────┘"
+echo "arcal-busmon static UI"
+echo ""
+echo "Open this URL in a browser:"
+if [[ -n "$WINDOWS_UI_URL" ]]; then
+  echo "  $WINDOWS_UI_URL"
+else
+  echo "  $BUSMON_UI_URL"
+fi
+if [[ -n "$WINDOWS_UI_URL" ]]; then
+  echo ""
+  echo "Native path     -> $BUSMON_UI_URL"
+fi
+echo ""
+echo "LA-CAL source   -> $LACAL_URL"
+if [[ "$START_ARLACAL" -eq 1 ]]; then
+  echo "Press Ctrl-C to stop arlacal-server"
+else
+  echo "Static page only; no local service started"
+fi
 echo ""
 
-wait "${PIDS[-1]}"
+if [[ "$START_ARLACAL" -eq 1 ]]; then
+  wait "${PIDS[-1]}"
+fi

@@ -10,40 +10,39 @@ body {
   font-family: 'SF Mono', Consolas, 'Liberation Mono', monospace;
   font-size: 13px; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
 }
-
-/* ── Header ──────────────────────────────────────────────────────────────── */
 #header {
-  display: flex; align-items: center; gap: 20px; padding: 7px 16px;
-  background: #161b22; border-bottom: 1px solid #30363d; flex-shrink: 0;
+  display: flex; align-items: center; gap: 12px; padding: 7px 16px;
+  background: #161b22; border-bottom: 1px solid #30363d; flex-shrink: 0; flex-wrap: wrap;
 }
-#header h1 { font-size: 14px; font-weight: 700; color: #58a6ff; letter-spacing: 0.03em; }
+#header h1 { font-size: 14px; font-weight: 700; color: #58a6ff; }
 .stat { color: #8b949e; font-size: 12px; white-space: nowrap; }
 .stat b { color: #e6edf3; font-weight: 600; }
 #dot { width: 8px; height: 8px; border-radius: 50%; background: #3d444d;
        display: inline-block; margin-right: 5px; transition: background 0.3s; }
 #dot.live  { background: #3fb950; box-shadow: 0 0 4px #3fb950; }
 #dot.error { background: #f85149; }
-#pause-btn {
-  margin-left: auto; padding: 3px 12px; background: #21262d;
-  border: 1px solid #30363d; color: #e6edf3; border-radius: 5px;
-  cursor: pointer; font-size: 12px; font-family: inherit;
+#dot.connecting { background: #d29922; box-shadow: 0 0 4px #d29922; }
+.controls {
+  display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap;
 }
-#pause-btn:hover { background: #30363d; }
-#pause-btn.paused { border-color: #f0883e; color: #f0883e; }
-.keys {
-  color: #8b949e; font-size: 11px; white-space: nowrap;
+.controls label {
+  font-size: 11px; color: #8b949e; white-space: nowrap;
 }
-.keys kbd {
-  padding: 1px 5px; background: #0d1117; border: 1px solid #30363d;
-  border-radius: 4px; color: #e6edf3; font-family: inherit; font-size: 11px;
+.controls input, .controls select, .controls button {
+  background: #0d1117; color: #e6edf3; border: 1px solid #30363d;
+  border-radius: 5px; font: inherit;
 }
-
-/* ── Body layout ─────────────────────────────────────────────────────────── */
+.controls input, .controls select { padding: 4px 8px; }
+.controls input { width: 280px; max-width: 40vw; }
+.controls button { padding: 4px 10px; cursor: pointer; }
+.controls button:hover { background: #21262d; }
+#status-line {
+  padding: 5px 16px; background: #11161d; color: #8b949e; font-size: 11px;
+  border-bottom: 1px solid #21262d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 #body { display: flex; flex: 1; overflow: hidden; }
-
-/* ── Sidebar ─────────────────────────────────────────────────────────────── */
 #sidebar {
-  width: 210px; flex-shrink: 0; background: #161b22;
+  width: 220px; flex-shrink: 0; background: #161b22;
   border-right: 1px solid #30363d; overflow-y: auto; padding: 6px 0;
 }
 #sidebar h3 {
@@ -69,8 +68,6 @@ body {
   flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px;
 }
 .topic-cnt { color: #8b949e; font-size: 11px; }
-
-/* ── Message list ────────────────────────────────────────────────────────── */
 #list-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 #col-header {
   display: grid; grid-template-columns: 100px 130px 1fr 58px 72px;
@@ -80,22 +77,20 @@ body {
 }
 #list-scroll { flex: 1; overflow-y: auto; position: relative; }
 #list-inner  { position: relative; }
-
 .row {
   position: absolute; width: 100%;
   display: grid; grid-template-columns: 100px 130px 1fr 58px 72px;
   gap: 8px; padding: 3px 12px; align-items: center; cursor: pointer;
   border-bottom: 1px solid #161b22;
 }
-.row:hover    { background: #1c2128; }
+.row:hover { background: #1c2128; }
 .row.selected { background: #1a3a5c !important; }
+.row.unavailable .type { color: #8b949e; }
 .row .ts    { color: #8b949e; font-size: 11px; }
 .row .topic { color: #79c0ff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row .type  { color: #a5d6ff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .row .bytes { color: #8b949e; text-align: right; font-size: 11px; }
 .row .seq   { color: #484f58; text-align: right; font-size: 11px; }
-
-/* ── Detail panel ────────────────────────────────────────────────────────── */
 #detail {
   width: 42%; flex-shrink: 0; border-left: 1px solid #30363d;
   display: flex; flex-direction: column; overflow: hidden;
@@ -114,9 +109,7 @@ body {
 .detail-toggles label {
   display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap;
 }
-.detail-toggles input {
-  accent-color: #58a6ff; cursor: pointer;
-}
+.detail-toggles input { accent-color: #58a6ff; cursor: pointer; }
 .detail-action {
   padding: 2px 9px; background: #21262d;
   border: 1px solid #30363d; color: #e6edf3; border-radius: 5px;
@@ -125,15 +118,11 @@ body {
 .detail-action:hover { background: #30363d; }
 .detail-action[hidden] { display: none; }
 #detail-body { flex: 1; overflow: auto; padding: 12px; }
-#detail-body pre { font-size: 12px; line-height: 1.55; white-space: pre; }
-
-/* JSON syntax colours */
-.jk { color: #79c0ff; }   /* key   */
-.jv { color: #a5d6ff; }   /* string value */
-.jn { color: #79c0ff; }   /* number */
-.jb { color: #ff7b72; }   /* bool / null */
-
-/* Loading spinner */
+#detail-body pre { font-size: 12px; line-height: 1.55; white-space: pre-wrap; }
+.jk { color: #79c0ff; }
+.jv { color: #a5d6ff; }
+.jn { color: #79c0ff; }
+.jb { color: #ff7b72; }
 .loading { color: #8b949e; font-style: italic; }
 </style>
 </head>
@@ -141,13 +130,27 @@ body {
 
 <div id="header">
   <h1>arcal-busmon</h1>
-  <div class="stat"><span id="dot"></span><span id="conn-txt">connecting…</span></div>
-  <div class="stat">total <b id="s-total">0</b></div>
-  <div class="stat">rate <b id="s-rate">0</b>/s</div>
+  <div class="stat"><span id="dot"></span><span id="conn-txt">idle</span></div>
+  <div class="stat">seen <b id="s-seen">0</b></div>
   <div class="stat">shown <b id="s-shown">0</b></div>
-  <div class="keys"><kbd>↑</kbd><kbd>↓</kbd> message&nbsp;&nbsp;<kbd>←</kbd><kbd>→</kbd> topic</div>
-  <button id="pause-btn" onclick="togglePause()">Pause</button>
+  <div class="stat">rate <b id="s-rate">0</b>/s</div>
+  <div class="stat">payloads <b id="s-payloads">0</b></div>
+  <div class="stat">meta evicted <b id="s-meta-evicted">0</b></div>
+  <div class="stat">payload evicted <b id="s-payload-evicted">0</b></div>
+  <div class="controls">
+    <label>WebSocket <input id="ws-url" spellcheck="false"></label>
+    <label>History
+      <select id="retention" onchange="applyRetentionPreset()">
+        <option value="light">Light</option>
+        <option value="normal">Normal</option>
+        <option value="deep">Deep</option>
+      </select>
+    </label>
+    <button id="connect-btn" onclick="toggleConnection()">Connect</button>
+    <button onclick="clearHistory()">Clear</button>
+  </div>
 </div>
+<div id="status-line">Static UI. Direct WebSocket to arlacal-server over OWP.</div>
 
 <div id="body">
   <div id="sidebar">
@@ -163,7 +166,7 @@ body {
     <div id="col-header">
       <span>Time</span><span>Topic</span><span>Type</span><span>Bytes</span><span>Seq</span>
     </div>
-    <div id="list-scroll" onscroll="onScroll()">
+    <div id="list-scroll" onscroll="renderList()">
       <div id="list-inner"></div>
     </div>
   </div>
@@ -182,62 +185,249 @@ body {
 </div>
 
 <script>
-// ── Config ────────────────────────────────────────────────────────────────────
-const ROW_H    = 28;
-const MAX_MSGS = 50_000;
-const WS_URL   = `ws://${location.host}/ws`;
+const ROW_H = 28;
+const STREAM_ID = 'busmon';
+const RETENTION_PRESETS = {
+  light:  { metadata: 5000,   payloads: 200 },
+  normal: { metadata: 50000,  payloads: 1000 },
+  deep:   { metadata: 200000, payloads: 5000 }
+};
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let msgs     = [];    // all metadata objects (ring buffer)
-let filtered = [];    // after topic filter
-let topics   = {};    // name → {count, enabled}
-let selMeta  = null;  // selected metadata object (reference)
-let paused   = false;
-let serverTotal = 0;
-let newTopicsEnabled = true;
+let ws = null;
+let phase = 'idle';
+let nextSeq = 0;
+let msgs = [];
+let filtered = [];
+let topics = {};
+let subs = new Map();
+let payloads = new Map();
+let payloadOrder = [];
 let detailData = null;
+let selSeq = null;
+let newTopicsEnabled = true;
+let seenTotal = 0;
+let metadataEvicted = 0;
+let payloadEvicted = 0;
+let rateBuckets = [];
+let infoPayload = null;
+let manualDisconnect = false;
 
-// Rate: count arrivals in the last 1 s buckets
-let rateBuckets = [];  // [{ts, n}]
-
-// ── WebSocket ─────────────────────────────────────────────────────────────────
-let ws;
-function connect() {
-  ws = new WebSocket(WS_URL);
-  ws.onopen  = () => setConn('live');
-  ws.onclose = () => { setConn('error'); setTimeout(connect, 2000); };
-  ws.onerror = () => setConn('error');
-  ws.onmessage = e => onBatch(JSON.parse(e.data));
+function defaultWsUrl() {
+  const query = new URLSearchParams(location.search);
+  return query.get('ws') || localStorage.getItem('busmon.wsUrl') || 'ws://127.0.0.1:8766';
 }
-function setConn(s) {
-  document.getElementById('dot').className      = s;
+
+function currentPreset() {
+  return RETENTION_PRESETS[document.getElementById('retention').value];
+}
+
+function saveSettings() {
+  localStorage.setItem('busmon.wsUrl', document.getElementById('ws-url').value.trim());
+  localStorage.setItem('busmon.retention', document.getElementById('retention').value);
+}
+
+function setConn(state, message = '') {
+  document.getElementById('dot').className = state;
   document.getElementById('conn-txt').textContent =
-    s === 'live' ? 'live' : s === 'error' ? 'disconnected' : 'connecting…';
+    state === 'live' ? 'live' :
+    state === 'error' ? 'error' :
+    state === 'connecting' ? 'connecting…' : 'idle';
+  if (message) document.getElementById('status-line').textContent = message;
+  const button = document.getElementById('connect-btn');
+  button.textContent = ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)
+    ? 'Disconnect'
+    : 'Connect';
 }
 
-// ── Ingestion ─────────────────────────────────────────────────────────────────
-function onBatch({ batch, total }) {
-  serverTotal = total || serverTotal;
-  rateBuckets.push({ ts: Date.now(), n: batch.length });
+function setStatus(message) {
+  document.getElementById('status-line').textContent = message;
+}
 
-  if (paused) return;
-
-  for (const m of batch) {
-    if (!topics[m.topic]) { topics[m.topic] = { count: 0, enabled: newTopicsEnabled }; }
-    topics[m.topic].count++;
+function toggleConnection() {
+  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+    manualDisconnect = true;
+    setConn('idle', 'Disconnecting ...');
+    ws.close();
+    return;
   }
-  renderTopics();
+  connect();
+}
 
-  msgs.push(...batch);
-  if (msgs.length > MAX_MSGS) msgs.splice(0, msgs.length - MAX_MSGS);
+function connect() {
+  saveSettings();
+  const url = document.getElementById('ws-url').value.trim();
+  if (!url) return;
 
+  subs.clear();
+  infoPayload = null;
+  phase = 'init';
+  manualDisconnect = false;
+  ws = new WebSocket(url, 'owp');
+  setConn('connecting', `Connecting to ${url} ...`);
+
+  ws.onopen = () => {
+    setStatus(`Connected transport to ${url}; sending INIT ...`);
+    ws.send('INIT ' + JSON.stringify({
+      versions: ['1.0'],
+      schema: '2.5.0',
+      verbose: true,
+      service_id: 'busmon-browser'
+    }));
+  };
+
+  ws.onmessage = event => {
+    if (typeof event.data === 'string') handleLine(event.data);
+  };
+
+  ws.onerror = () => {
+    setConn('error', 'WebSocket error');
+  };
+
+  ws.onclose = () => {
+    const expectedClose = manualDisconnect;
+    manualDisconnect = false;
+    ws = null;
+    phase = 'idle';
+    if (expectedClose) {
+      setConn('idle', 'Disconnected');
+      return;
+    }
+    setConn('error', 'Disconnected');
+  };
+}
+
+function handleLine(line) {
+  if (line.startsWith('INFO ')) {
+    try {
+      infoPayload = JSON.parse(line.slice(5));
+      setStatus(`Server ${infoPayload.server_id} extensions=${(infoPayload.extensions || []).join(', ')}`);
+    } catch {
+      setStatus(`INFO ${line.slice(5)}`);
+    }
+    return;
+  }
+
+  if (line === '+OK') {
+    if (phase === 'init') {
+      phase = 'xsub';
+      ws.send(`XSUB ${STREAM_ID} *`);
+      setStatus('INIT acknowledged; sending wildcard subscription ...');
+    } else if (phase === 'xsub') {
+      phase = 'live';
+      setConn('live', `Streaming from ${document.getElementById('ws-url').value.trim()}`);
+    }
+    return;
+  }
+
+  if (line.startsWith('-ERR ')) {
+    setConn('error', line);
+    return;
+  }
+
+  if (line.startsWith('XSUBINFO ')) {
+    const fields = line.split(' ', 5);
+    if (fields.length === 5) {
+      const [, streamId, subscriptionId, topic, messageName] = fields;
+      subs.set(subscriptionId, { streamId, topic, messageName });
+      if (!topics[topic]) topics[topic] = { count: 0, enabled: newTopicsEnabled };
+      renderTopics();
+    }
+    return;
+  }
+
+  if (line.startsWith('MSG ')) {
+    const sp = line.indexOf(' ', 4);
+    if (sp < 0) return;
+    const subscriptionId = line.slice(4, sp);
+    const payloadText = line.slice(sp + 1);
+    const sub = subs.get(subscriptionId) || {
+      topic: '(unknown)',
+      messageName: '(unknown)'
+    };
+
+    let payload = null;
+    try {
+      payload = JSON.parse(payloadText);
+    } catch {
+      payload = { _raw: payloadText };
+    }
+
+    ingestMessage(sub.topic, sub.messageName, payload, payloadText.length);
+    return;
+  }
+
+  setStatus(`Unhandled line: ${line}`);
+}
+
+function ingestMessage(topic, type, payload, byteLength) {
+  seenTotal += 1;
+  rateBuckets.push({ ts: Date.now(), n: 1 });
+
+  if (!topics[topic]) topics[topic] = { count: 0, enabled: newTopicsEnabled };
+  topics[topic].count += 1;
+
+  const meta = {
+    seq: ++nextSeq,
+    topic,
+    type,
+    bytes: byteLength,
+    ts_ms: Date.now()
+  };
+
+  msgs.push(meta);
+  payloads.set(meta.seq, payload);
+  payloadOrder.push(meta.seq);
+
+  trimMetadata();
+  trimPayloads();
   rebuildFiltered();
+  renderTopics();
   updateStats();
 
   const el = document.getElementById('list-scroll');
   const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
   renderList();
-  if (!selMeta && atBottom) el.scrollTop = el.scrollHeight;
+  if (selSeq === null && atBottom) el.scrollTop = el.scrollHeight;
+}
+
+function trimMetadata() {
+  const limit = currentPreset().metadata;
+  while (msgs.length > limit) {
+    const evicted = msgs.shift();
+    metadataEvicted += 1;
+    if (topics[evicted.topic]) {
+      topics[evicted.topic].count -= 1;
+      if (topics[evicted.topic].count <= 0) delete topics[evicted.topic];
+    }
+    if (selSeq === evicted.seq) {
+      selSeq = null;
+      detailData = null;
+      renderDetailUnavailable('Selected message metadata was evicted from history.');
+    }
+  }
+}
+
+function trimPayloads() {
+  const limit = currentPreset().payloads;
+  while (payloadOrder.length > limit) {
+    const seq = payloadOrder.shift();
+    if (payloads.delete(seq)) payloadEvicted += 1;
+    if (selSeq === seq) {
+      detailData = null;
+      renderDetailUnavailable('Payload no longer retained locally.');
+    }
+  }
+}
+
+function applyRetentionPreset() {
+  saveSettings();
+  trimMetadata();
+  trimPayloads();
+  rebuildFiltered();
+  renderTopics();
+  updateStats();
+  renderList();
+  if (selSeq !== null) selectMsg(selSeq);
 }
 
 function rebuildFiltered() {
@@ -247,22 +437,23 @@ function rebuildFiltered() {
 function updateStats() {
   const now = Date.now();
   rateBuckets = rateBuckets.filter(b => b.ts > now - 1000);
-  const rate  = rateBuckets.reduce((a, b) => a + b.n, 0);
-  document.getElementById('s-total').textContent = serverTotal.toLocaleString();
-  document.getElementById('s-rate').textContent  = rate.toLocaleString();
+  const rate = rateBuckets.reduce((a, b) => a + b.n, 0);
+  document.getElementById('s-seen').textContent = seenTotal.toLocaleString();
   document.getElementById('s-shown').textContent = filtered.length.toLocaleString();
+  document.getElementById('s-rate').textContent = rate.toLocaleString();
+  document.getElementById('s-payloads').textContent = payloads.size.toLocaleString();
+  document.getElementById('s-meta-evicted').textContent = metadataEvicted.toLocaleString();
+  document.getElementById('s-payload-evicted').textContent = payloadEvicted.toLocaleString();
 }
 
-// ── Topics sidebar ────────────────────────────────────────────────────────────
 function renderTopics() {
   const list = document.getElementById('topic-list');
   list.innerHTML = '';
-  for (const [name, info] of Object.entries(topics).sort(([a],[b]) => a < b ? -1 : 1)) {
+  for (const [name, info] of Object.entries(topics).sort(([a], [b]) => a.localeCompare(b))) {
     const d = document.createElement('div');
     const input = document.createElement('input');
     const label = document.createElement('span');
     const count = document.createElement('span');
-
     d.className = 'topic-row';
     input.type = 'checkbox';
     input.checked = info.enabled;
@@ -287,32 +478,47 @@ function toggleTopic(name, enabled) {
 function setAllTopics(enabled) {
   newTopicsEnabled = enabled;
   for (const info of Object.values(topics)) info.enabled = enabled;
-  renderTopics();
   rebuildFiltered();
+  renderTopics();
   renderList();
   updateStats();
 }
 
-// ── Virtual scroll ─────────────────────────────────────────────────────────────
-function onScroll() { renderList(); }
+function clearHistory() {
+  msgs = [];
+  filtered = [];
+  topics = {};
+  payloads.clear();
+  payloadOrder = [];
+  detailData = null;
+  selSeq = null;
+  metadataEvicted = 0;
+  payloadEvicted = 0;
+  seenTotal = 0;
+  nextSeq = 0;
+  updateStats();
+  renderTopics();
+  renderList();
+  renderDetailUnavailable('History cleared.');
+}
 
 function renderList() {
   const scroll = document.getElementById('list-scroll');
-  const inner  = document.getElementById('list-inner');
+  const inner = document.getElementById('list-inner');
 
   inner.style.height = (filtered.length * ROW_H) + 'px';
 
-  const top    = scroll.scrollTop;
+  const top = scroll.scrollTop;
   const height = scroll.clientHeight;
-  const start  = Math.max(0, Math.floor(top / ROW_H) - 5);
-  const end    = Math.min(filtered.length - 1, Math.ceil((top + height) / ROW_H) + 5);
+  const start = Math.max(0, Math.floor(top / ROW_H) - 5);
+  const end = Math.min(filtered.length - 1, Math.ceil((top + height) / ROW_H) + 5);
 
   const frag = document.createDocumentFragment();
   for (let i = start; i <= end; i++) {
-    const m   = filtered[i];
+    const m = filtered[i];
     const row = document.createElement('div');
-    row.className = 'row' + (m === selMeta ? ' selected' : '');
-    row.style.top    = (i * ROW_H) + 'px';
+    row.className = 'row' + (m.seq === selSeq ? ' selected' : '') + (payloads.has(m.seq) ? '' : ' unavailable');
+    row.style.top = (i * ROW_H) + 'px';
     row.style.height = ROW_H + 'px';
     const ts = new Date(m.ts_ms).toISOString().slice(11, 23);
     row.innerHTML =
@@ -321,41 +527,47 @@ function renderList() {
       `<span class="type">${esc(m.type)}</span>` +
       `<span class="bytes">${m.bytes}</span>` +
       `<span class="seq">${m.seq}</span>`;
-    const captured = m;
-    row.onpointerdown = () => selectMsg(captured);
+    row.onpointerdown = () => selectMsg(m.seq);
     frag.appendChild(row);
   }
   inner.innerHTML = '';
   inner.appendChild(frag);
 }
 
-// ── Detail panel ───────────────────────────────────────────────────────────────
-async function selectMsg(meta) {
-  selMeta = meta;
-  renderList();  // re-render to show selection highlight
+function findMeta(seq) {
+  return msgs.find(m => m.seq === seq) || null;
+}
+
+function selectMsg(seq) {
+  const meta = findMeta(seq);
+  if (!meta) {
+    renderDetailUnavailable('Selected message is no longer in retained metadata.');
+    return;
+  }
+
+  selSeq = seq;
+  renderList();
 
   const hdr = document.getElementById('detail-title');
-  const body = document.getElementById('detail-body');
   const saveBtn = document.getElementById('save-detail');
-  const tag = meta.tag ? `  ·  ${meta.tag}` : '';
-  hdr.textContent = `${meta.type}  ·  ${meta.topic}  ·  seq ${meta.seq}  ·  ${meta.bytes} B${tag}`;
-  body.innerHTML = '<pre class="loading">loading…</pre>';
-  detailData = null;
-  saveBtn.hidden = true;
+  hdr.textContent = `${meta.type}  ·  ${meta.topic}  ·  seq ${meta.seq}  ·  ${meta.bytes} B`;
 
-  try {
-    const resp = await fetch(`/message/${meta.seq}`);
-    const data = await resp.json();
-    if (resp.ok) {
-      detailData = data;
-      saveBtn.hidden = false;
-      rerenderDetail();
-    } else {
-      body.innerHTML = `<pre style="color:#f85149">${esc(data.error || 'error')}</pre>`;
-    }
-  } catch (e) {
-    body.innerHTML = `<pre style="color:#f85149">${esc(String(e))}</pre>`;
+  const payload = payloads.get(seq);
+  if (!payload) {
+    detailData = null;
+    saveBtn.hidden = true;
+    renderDetailUnavailable('Payload no longer retained locally.');
+    return;
   }
+
+  detailData = payload;
+  saveBtn.hidden = false;
+  rerenderDetail();
+}
+
+function renderDetailUnavailable(message) {
+  const body = document.getElementById('detail-body');
+  body.innerHTML = `<pre class="loading">${esc(message)}</pre>`;
 }
 
 function filteredDetailData(data) {
@@ -381,14 +593,16 @@ function rerenderDetail() {
 }
 
 function saveSelectedMessage() {
-  if (!detailData || !selMeta) return;
+  if (!detailData || selSeq === null) return;
+  const meta = findMeta(selSeq);
+  if (!meta) return;
   const json = JSON.stringify(filteredDetailData(detailData), null, 2) + '\n';
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  const topic = selMeta.topic.replace(/[^A-Za-z0-9_.-]+/g, '_');
+  const topic = meta.topic.replace(/[^A-Za-z0-9_.-]+/g, '_');
   link.href = url;
-  link.download = `${topic}-${selMeta.seq}.json`;
+  link.download = `${topic}-${meta.seq}.json`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -396,8 +610,8 @@ function saveSelectedMessage() {
 }
 
 function selectedIndex() {
-  if (!selMeta) return -1;
-  return filtered.findIndex(m => m === selMeta || (m.topic === selMeta.topic && m.seq === selMeta.seq));
+  if (selSeq === null) return -1;
+  return filtered.findIndex(m => m.seq === selSeq);
 }
 
 function selectByOffset(delta) {
@@ -413,7 +627,6 @@ function selectByTopic(delta) {
   const current = selectedIndex();
   const base = current >= 0 ? current : filtered.length - 1;
   const topic = filtered[base]?.topic;
-
   for (let i = base + delta; i >= 0 && i < filtered.length; i += delta) {
     if (filtered[i].topic !== topic) {
       revealAndSelect(i);
@@ -426,20 +639,14 @@ function revealAndSelect(index) {
   const scroll = document.getElementById('list-scroll');
   const top = index * ROW_H;
   const bottom = top + ROW_H;
-
-  if (top < scroll.scrollTop) {
-    scroll.scrollTop = top;
-  } else if (bottom > scroll.scrollTop + scroll.clientHeight) {
-    scroll.scrollTop = bottom - scroll.clientHeight;
-  }
-
-  selectMsg(filtered[index]);
+  if (top < scroll.scrollTop) scroll.scrollTop = top;
+  else if (bottom > scroll.scrollTop + scroll.clientHeight) scroll.scrollTop = bottom - scroll.clientHeight;
+  selectMsg(filtered[index].seq);
 }
 
 function handleKeyNav(e) {
   const tag = e.target?.tagName;
   if (tag === 'INPUT' || tag === 'BUTTON' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-
   if (e.key === 'ArrowUp') {
     e.preventDefault();
     selectByOffset(-1);
@@ -455,9 +662,7 @@ function handleKeyNav(e) {
   }
 }
 
-// ── JSON syntax highlight ──────────────────────────────────────────────────────
 function highlight(json) {
-  // Escape HTML first, then colour tokens.
   const safe = json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   return safe.replace(
     /("(?:\\u[0-9a-fA-F]{4}|\\[^u]|[^\\"])*"(?:\s*:)?|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
@@ -467,29 +672,30 @@ function highlight(json) {
           ? `<span class="jk">${tok}</span>`
           : `<span class="jv">${tok}</span>`;
       }
-      if (tok === 'true' || tok === 'false' || tok === 'null')
-        return `<span class="jb">${tok}</span>`;
+      if (tok === 'true' || tok === 'false' || tok === 'null') return `<span class="jb">${tok}</span>`;
       return `<span class="jn">${tok}</span>`;
     }
   );
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function togglePause() {
-  paused = !paused;
-  const btn = document.getElementById('pause-btn');
-  btn.textContent = paused ? 'Resume' : 'Pause';
-  btn.className   = paused ? 'paused' : '';
+function initSettings() {
+  document.getElementById('ws-url').value = defaultWsUrl();
+  const savedRetention = localStorage.getItem('busmon.retention');
+  if (savedRetention && RETENTION_PRESETS[savedRetention]) {
+    document.getElementById('retention').value = savedRetention;
+  }
+  updateStats();
+  renderTopics();
+  renderList();
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
 setInterval(updateStats, 1000);
 document.addEventListener('keydown', handleKeyNav);
-connect();
+initSettings();
 </script>
 </body>
 </html>
