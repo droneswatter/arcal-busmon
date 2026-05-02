@@ -363,7 +363,8 @@ function ingestMessage(topic, type, payload, byteLength) {
   seenTotal += 1;
   rateBuckets.push({ ts: Date.now(), n: 1 });
 
-  if (!topics[topic]) topics[topic] = { count: 0, enabled: newTopicsEnabled };
+  const isNew = !topics[topic];
+  if (isNew) topics[topic] = { count: 0, enabled: newTopicsEnabled };
   topics[topic].count += 1;
 
   const meta = {
@@ -381,7 +382,7 @@ function ingestMessage(topic, type, payload, byteLength) {
   trimMetadata();
   trimPayloads();
   rebuildFiltered();
-  renderTopics();
+  if (isNew) renderTopics(); else updateTopicCount(topic);
   updateStats();
 
   const el = document.getElementById('list-scroll');
@@ -455,6 +456,7 @@ function renderTopics() {
     const label = document.createElement('span');
     const count = document.createElement('span');
     d.className = 'topic-row';
+    d.dataset.topic = name;
     input.type = 'checkbox';
     input.checked = info.enabled;
     input.addEventListener('change', () => toggleTopic(name, input.checked));
@@ -466,6 +468,11 @@ function renderTopics() {
     d.append(input, label, count);
     list.appendChild(d);
   }
+}
+
+function updateTopicCount(topic) {
+  const row = document.querySelector(`#topic-list [data-topic="${CSS.escape(topic)}"]`);
+  if (row) row.querySelector('.topic-cnt').textContent = topics[topic].count.toLocaleString();
 }
 
 function toggleTopic(name, enabled) {
@@ -628,7 +635,7 @@ function selectByTopic(delta) {
   const base = current >= 0 ? current : filtered.length - 1;
   const topic = filtered[base]?.topic;
   for (let i = base + delta; i >= 0 && i < filtered.length; i += delta) {
-    if (filtered[i].topic !== topic) {
+    if (filtered[i].topic === topic) {
       revealAndSelect(i);
       return;
     }
